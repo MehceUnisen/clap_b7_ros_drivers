@@ -15,7 +15,6 @@
 
 #include "TermiosSerial.h"
 #include "AsyncSerial.h"
-#include "AgricInfoInterface.h"
 
 #include "rclcpp/rclcpp.hpp"
 
