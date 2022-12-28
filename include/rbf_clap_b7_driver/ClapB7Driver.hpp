@@ -66,7 +66,6 @@ private:
 
     ros::Publisher pub_clap_data_;
 
-    AgricMsg_* AgricMsg_p{};
 
     ClapB7Controller clapB7Controller;
 
