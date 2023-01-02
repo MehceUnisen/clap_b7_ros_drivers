@@ -67,7 +67,7 @@ void ClapB7Driver::ParseDataASCII(std::string serial_data) {
     }
     seperated_data_.push_back(raw_serial_data);
 
-    if (header_ == "#INTERESULTA") {
+    if (header_ == "INTERESULTA") {
         int i = 0;
         clapB7Controller.clapData.ins_status= stringToNum<uint32_t>(seperated_data_.at(i++));
         clapB7Controller.clapData.pos_type= stringToNum<uint32_t>(seperated_data_.at(i++));
