@@ -44,8 +44,8 @@ private:
     void timer_callback();
 
 
-    void ParseDataASCII(const char* serial_data);
-
+    void ParseDataASCII(std::string serial_data);
+    void ascii_data_collector(const char* serial_data, int len);
     void pub_ClapB7Data();
 
 
@@ -69,7 +69,6 @@ private:
     rclcpp::Publisher<rbf_clap_b7_msgs::msg::ClapData>::SharedPtr pub_clap_data_;
 
     rclcpp::TimerBase::SharedPtr timer_;
-    AgricMsg_* AgricMsg_p{};
 
     ClapB7Controller clapB7Controller;
 

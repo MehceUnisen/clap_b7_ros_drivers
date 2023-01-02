@@ -111,7 +111,7 @@ void ClapB7Driver::serial_receive_callback(const char *data, unsigned int len)
 //    RCLCPP_INFO_STREAM(this->get_logger(), "Boost Data Size: '" << numToString(len) << "'");
 
     if (parse_type_ == "ASCII") {
-        ParseDataASCII(data);
+        ascii_data_collector(data, len);
     }
     else{
         ClapB7Parser(&clapB7Controller, reinterpret_cast<const uint8_t *>(data), len);
@@ -121,7 +121,7 @@ void ClapB7Driver::serial_receive_callback(const char *data, unsigned int len)
 void ClapB7Driver::timer_callback() {
 }
 
-void ClapB7Driver::ParseDataASCII(const char* serial_data) {
+void ClapB7Driver::ParseDataASCII(std::string serial_data) {
     string raw_serial_data = numToString(serial_data);
 
     std::string delimiter = ",";
@@ -141,7 +141,7 @@ void ClapB7Driver::ParseDataASCII(const char* serial_data) {
     }
     seperated_data_.push_back(raw_serial_data);
 
-    if (header_ == "#INTERESULTA") {
+    if (header_ == "INTERESULTA") {
         int i = 0;
         clapB7Controller.clapData.ins_status= stringToNum<uint32_t>(seperated_data_.at(i++));
         clapB7Controller.clapData.pos_type= stringToNum<uint32_t>(seperated_data_.at(i++));
@@ -294,4 +294,30 @@ int ClapB7Driver::NTRIP_client_start()
   ntripClient.Run();
 
   return 0;
+}
+
+void ClapB7Driver::ascii_data_collector(const char* serial_data, int len) {
+    static int parser_case = 0;
+    static std::string collected_data;
+
+    for (int i = 0; i < len; ++i) {
+        switch (parser_case) {
+            case 0:
+                if (serial_data[i] == '#') {
+                    parser_case++;
+                }
+                break;
+
+            case 1:
+                if (serial_data[i] != '\r') {
+                    collected_data += serial_data[i];
+                }
+                if (serial_data[i] == '\n'){
+                    ParseDataASCII(collected_data);
+                    parser_case = 0;
+                    collected_data.clear();
+                }
+                break;
+        }
+    }
 }
