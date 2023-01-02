@@ -16,6 +16,7 @@
 
 #include "TermiosSerial.h"
 #include "AsyncSerial.h"
+#include "AgricInfoInterface.h"
 
 #include <ros/ros.h>
 #include <rbf_clap_b7_driver/ClapData.h>
@@ -37,9 +38,9 @@ private:
     void timer_callback();
 
 
-    void ParseDataASCII(const char* serial_data);
+    void ParseDataASCII(std::string serial_data);
     void pub_GnssData();
-
+    void ascii_data_collector(const char* serial_data, int len);
     void pub_ClapB7Data();
 
 
@@ -66,6 +67,7 @@ private:
 
     ros::Publisher pub_clap_data_;
 
+    AgricMsg_* AgricMsg_p{};
 
     ClapB7Controller clapB7Controller;
 

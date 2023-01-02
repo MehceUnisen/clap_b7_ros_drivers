@@ -6,23 +6,15 @@
 using namespace std;
 
 ClapB7Driver::ClapB7Driver(ros::NodeHandle &nh):
-    serial_boost("/dev/pts/6", 460800)
+    serial_boost("/dev/ttyUSB0", 460800)
 {
-    parse_type_ = "BINARY";
 
     pub_clap_data_ = nh.advertise<rbf_clap_b7_driver::ClapData>("/clap_b7_data", 10);
 
     serial_boost.setCallback(bind(&ClapB7Driver::serial_receive_callback, this, std::placeholders::_1, std::placeholders::_2));
-    
-    if (parse_type_ == "BINARY")
-        ClapB7Init(&clapB7Controller, bind(&ClapB7Driver::pub_ClapB7Data, this));
+    ClapB7Init(&clapB7Controller, bind(&ClapB7Driver::pub_ClapB7Data, this));
 
-    else if (parse_type_ != "ASCII") {
-        perror("PARSE TYPE DOESN'T MATCH ANY FORMAT, USE 'ASCII' OR 'BINARY' INSTEAD");
-        exit(-1);
-    }
-    
-    NTRIP_client_start();
+//    NTRIP_client_start();
 }
 
 template <typename Type>
@@ -47,13 +39,15 @@ string numToString (const Type &num)
 
 void ClapB7Driver::serial_receive_callback(const char *data, unsigned int len)
 {
-    if (parse_type_ == "BINARY")
+    if (parse_type_ == "ASCII") {
+        ascii_data_collector(data, len);
+    }
+    else{
         ClapB7Parser(&clapB7Controller, reinterpret_cast<const uint8_t *>(data), len);
-    else
-        ParseDataASCII(data);
+    }
 }
 
-void ClapB7Driver::ParseDataASCII(const char* serial_data) {
+void ClapB7Driver::ParseDataASCII(std::string serial_data) {
     string raw_serial_data = numToString(serial_data);
 
     std::string delimiter = ",";
@@ -135,7 +129,7 @@ void ClapB7Driver::ParseDataASCII(const char* serial_data) {
         pub_ClapB7Data();
     }
     else {
-        perror("Received data doesn't match with any header");
+//        RCLCPP_WARN(this->get_logger(), "Received data doesn't match with any header");
     }
     seperated_data_.clear();
 }
@@ -226,4 +220,31 @@ int ClapB7Driver::NTRIP_client_start()
   ntripClient.Run();
 
   return 0;
+}
+
+void ClapB7Driver::ascii_data_collector(const char* serial_data, int len) {
+    static int parser_case = 0;
+    static std::string collected_data;
+
+    for (int i = 0; i < len; ++i) {
+        switch (parser_case) {
+            case 0:
+                if (serial_data[i] == '#') {
+                    parser_case++;
+                }
+                break;
+
+            case 1:
+                if (serial_data[i] != '\r') {
+                    collected_data += serial_data[i];
+                }
+                if (serial_data[i] == '\n'){
+                    ParseDataASCII(collected_data);
+                    freq++;
+                    parser_case = 0;
+                    collected_data.clear();
+                }
+                break;
+        }
+    }
 }
